@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.mygdx.handlers.GameStateManager;
+import com.mygdx.handlers.MyInput;
+import com.mygdx.handlers.MyInputProcessor;
 
 public class MyGdxGame extends ApplicationAdapter {
 
@@ -30,6 +32,8 @@ public class MyGdxGame extends ApplicationAdapter {
 
 	@Override
 	public void create () {
+		Gdx.input.setInputProcessor(new MyInputProcessor());
+
 		sb = new SpriteBatch();
 		cam = new OrthographicCamera();
 		cam.setToOrtho(false, V_WIDTH, V_HEIGHT);
@@ -46,6 +50,7 @@ public class MyGdxGame extends ApplicationAdapter {
 			accum -= STEP;
 			gsm.update(STEP);
 			gsm.render();
+			MyInput.update();
 		}
 	}
 	
