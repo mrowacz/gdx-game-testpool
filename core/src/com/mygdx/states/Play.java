@@ -7,7 +7,9 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.mygdx.game.MyGdxGame;
+import com.mygdx.handlers.B2DVars;
 import com.mygdx.handlers.GameStateManager;
+import com.mygdx.handlers.MyContactListener;
 
 /**
  * Created by mrowacz on 14.08.17.
@@ -21,7 +23,8 @@ public class Play extends GameState {
 
     public Play(GameStateManager gsm) {
         super(gsm);
-        world = new World(new Vector2(0, -9.81f), true);
+        world = new World(new Vector2(0, -0.81f), true);
+        world.setContactListener(new MyContactListener());
         b2dr = new Box2DDebugRenderer();
 
         // create platform
@@ -34,7 +37,10 @@ public class Play extends GameState {
         shape.setAsBox(50 / PPM, 5 / PPM);
         FixtureDef fdef = new FixtureDef();
         fdef.shape = shape;
-        body.createFixture(fdef);
+        fdef.filter.categoryBits = B2DVars.BIT_GROUND;
+        fdef.filter.maskBits = B2DVars.BIT_BOX |
+                B2DVars.BIT_BALL;
+        body.createFixture(fdef).setUserData("ground");
 
         // creating falling box
         bdef.position.set(160 / PPM, 200 / PPM);
@@ -42,9 +48,21 @@ public class Play extends GameState {
         body = world.createBody(bdef);
         shape.setAsBox(5 / PPM, 5 / PPM);
         fdef.shape = shape;
-
+        fdef.filter.categoryBits = B2DVars.BIT_BOX;
+        fdef.filter.maskBits = B2DVars.BIT_GROUND;
         fdef.restitution = 0f;
-        body.createFixture(fdef);
+        body.createFixture(fdef).setUserData("box");
+
+        // create ball
+        bdef.position.set(153 / PPM, 220 / PPM);
+        body = world.createBody(bdef);
+
+        CircleShape cshape = new CircleShape();
+        cshape.setRadius(5 / PPM);
+        fdef.shape = cshape;
+        fdef.filter.categoryBits = B2DVars.BIT_BALL;
+        fdef.filter.maskBits = B2DVars.BIT_GROUND;
+        body.createFixture(fdef).setUserData("ball");
 
         // set up box2d cam;
         b2dCam = new OrthographicCamera();
