@@ -32,6 +32,7 @@ public class MyGdxGame extends ApplicationAdapter {
 
 	@Override
 	public void create () {
+//		Texture.setEnforcePotImages(false);
 		Gdx.input.setInputProcessor(new MyInputProcessor());
 
 		sb = new SpriteBatch();
