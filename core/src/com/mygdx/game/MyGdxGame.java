@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.mygdx.handlers.Content;
 import com.mygdx.handlers.GameStateManager;
 import com.mygdx.handlers.MyInput;
 import com.mygdx.handlers.MyInputProcessor;
@@ -13,8 +14,8 @@ import com.mygdx.handlers.MyInputProcessor;
 public class MyGdxGame extends ApplicationAdapter {
 
 	public static final String TITLE = "Block Bunny";
-	public static final int V_WIDTH = 320;
-	public static final int V_HEIGHT = 240;
+	public static final int V_WIDTH = 640;
+	public static final int V_HEIGHT = 480;
 	public static final int SCALE = 2;
 
 	public static final float STEP = 1 / 60f;
@@ -30,11 +31,15 @@ public class MyGdxGame extends ApplicationAdapter {
 
 	private GameStateManager gsm;
 
+	public static Content res;
+
 	@Override
 	public void create () {
 //		Texture.setEnforcePotImages(false);
 		Gdx.input.setInputProcessor(new MyInputProcessor());
 
+		res = new Content();
+		res.loadTexture("images/bunny.png", "bunny");
 		sb = new SpriteBatch();
 		cam = new OrthographicCamera();
 		cam.setToOrtho(false, V_WIDTH, V_HEIGHT);
