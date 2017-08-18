@@ -4,12 +4,16 @@ import static com.mygdx.handlers.B2DVars.PPM;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.maps.MapLayer;
+import com.badlogic.gdx.maps.MapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.utils.Array;
+import com.mygdx.entities.Crystal;
 import com.mygdx.entities.Player;
 import com.mygdx.game.MyGdxGame;
 import com.mygdx.handlers.B2DVars;
@@ -22,6 +26,8 @@ import com.mygdx.handlers.MyInput;
  */
 public class Play extends GameState {
 
+    private boolean debug = true;
+
     private World world;
     private Box2DDebugRenderer b2dr;
     private OrthographicCamera b2dCam;
@@ -32,6 +38,7 @@ public class Play extends GameState {
     private OrthogonalTiledMapRenderer tmr;
 
     private Player player;
+    private Array<Crystal> crystals;
 
     public Play(GameStateManager gsm) {
         super(gsm);
@@ -48,6 +55,9 @@ public class Play extends GameState {
         // createTiles();
         createTiles();
 
+        // create crystals
+        createCrystals();
+
         // set up box2d cam;
         b2dCam = new OrthographicCamera();
         b2dCam.setToOrtho(false, MyGdxGame.V_WIDTH / PPM, MyGdxGame.V_HEIGHT / PPM);
@@ -58,7 +68,7 @@ public class Play extends GameState {
         // player jump
         if (MyInput.isPressed(MyInput.BUTTON1)) {
             if (cl.isPlayerOnGround()) {
-                player.getBody().applyForceToCenter(0, 200, true);
+                player.getBody().applyForceToCenter(0, 250, true);
             }
         }
 
@@ -68,9 +78,27 @@ public class Play extends GameState {
 
     @Override
     public void update(float dt) {
+        // check input
         handleInput();
+
+        // update box
         world.step(dt, 6, 2);
+
+        // move player
         player.update(dt);
+
+        // remove crystals
+        Array<Body> bodies = cl.getBodiestoRemove();
+        for (int i = 0; i < bodies.size; i++) {
+            Body b = bodies.get(i);
+            crystals.removeValue((Crystal) b.getUserData(), true);
+            world.destroyBody(b);
+            player.collecCrystal();
+        }
+        bodies.clear();
+
+        for (int i = 0; i < crystals.size; i++)
+            crystals.get(i).update(dt);
     }
 
     @Override
@@ -87,8 +115,14 @@ public class Play extends GameState {
         sb.setProjectionMatrix(cam.combined);
         player.render(sb);
 
+        // draw crystals
+        for (int i = 0; i < crystals.size; i++) {
+            crystals.get(i).render(sb);
+        }
+
         // draw box2d world
-        b2dr.render(world, b2dCam.combined);
+        if (debug)
+            b2dr.render(world, b2dCam.combined);
     }
 
     @Override
@@ -109,7 +143,7 @@ public class Play extends GameState {
         shape.setAsBox(13 / PPM, 13 / PPM);
         fdef.shape = shape;
         fdef.filter.categoryBits = B2DVars.BIT_PLAYER;
-        fdef.filter.maskBits = -1;
+        fdef.filter.maskBits = B2DVars.BIT_RED | B2DVars.BIT_CRYSTAL;
         fdef.restitution = 0f;
         body.createFixture(fdef).setUserData("player");
 
@@ -117,7 +151,7 @@ public class Play extends GameState {
         shape.setAsBox(13 / PPM, 2/PPM, new Vector2(0, -13 / PPM), 0);
         fdef.shape = shape;
         fdef.filter.categoryBits = B2DVars.BIT_PLAYER;
-        fdef.filter.maskBits = -1;
+        fdef.filter.maskBits = B2DVars.BIT_RED | B2DVars.BIT_CRYSTAL;
         fdef.isSensor = true;
         body.createFixture(fdef).setUserData("foot");
 
@@ -183,4 +217,38 @@ public class Play extends GameState {
             }
         }
     }
+
+    private void createCrystals()
+    {
+        crystals = new Array<Crystal>();
+        MapLayer layer = tileMap.getLayers().get("crystals");
+
+        BodyDef bdef = new BodyDef();
+        FixtureDef fdef = new FixtureDef();
+
+        for (MapObject mo : layer.getObjects()) {
+
+            bdef.type = BodyDef.BodyType.StaticBody;
+            float x = Float.parseFloat(mo.getProperties().get("x").toString()) / PPM;
+            float y = Float.parseFloat(mo.getProperties().get("y").toString()) / PPM;
+            bdef.position.set(x, y);
+
+            CircleShape cshape = new CircleShape();
+            cshape.setRadius(8f / PPM);
+
+            fdef.shape = cshape;
+            fdef.isSensor = true;
+            fdef.filter.categoryBits = B2DVars.BIT_CRYSTAL;
+            fdef.filter.maskBits = B2DVars.BIT_PLAYER;
+
+            Body body = world.createBody(bdef);
+            body.createFixture(fdef).setUserData("crystal");
+
+            Crystal c = new Crystal(body);
+            crystals.add(c);
+
+            body.setUserData(c);
+        }
+    }
+
 }
