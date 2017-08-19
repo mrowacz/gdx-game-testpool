@@ -14,6 +14,7 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
 import com.mygdx.entities.Crystal;
+import com.mygdx.entities.HUD;
 import com.mygdx.entities.Player;
 import com.mygdx.game.MyGdxGame;
 import com.mygdx.handlers.B2DVars;
@@ -40,6 +41,8 @@ public class Play extends GameState {
     private Player player;
     private Array<Crystal> crystals;
 
+    private HUD hud;
+
     public Play(GameStateManager gsm) {
         super(gsm);
 
@@ -61,6 +64,9 @@ public class Play extends GameState {
         // set up box2d cam;
         b2dCam = new OrthographicCamera();
         b2dCam.setToOrtho(false, MyGdxGame.V_WIDTH / PPM, MyGdxGame.V_HEIGHT / PPM);
+
+        // set up  hud
+        hud = new HUD(player);
     }
 
     @Override
@@ -72,8 +78,11 @@ public class Play extends GameState {
             }
         }
 
-        if (MyInput.isPressed(MyInput.BUTTON2))
-            System.out.println("hold x");
+        // switch block color
+        if (MyInput.isPressed(MyInput.BUTTON2)) {
+            switchBlocks();
+        }
+
     }
 
     @Override
@@ -119,6 +128,10 @@ public class Play extends GameState {
         for (int i = 0; i < crystals.size; i++) {
             crystals.get(i).render(sb);
         }
+
+        // draw hud
+        sb.setProjectionMatrix(hudCam.combined );
+        hud.render(sb);
 
         // draw box2d world
         if (debug)
@@ -251,4 +264,31 @@ public class Play extends GameState {
         }
     }
 
+    private void switchBlocks() {
+        Filter filter = player.getBody().getFixtureList().first().getFilterData();
+        short bits = filter.maskBits;
+
+        // switch to next color
+        // red -> green -> blue -> red
+        if ((bits & B2DVars.BIT_RED) != 0) {
+            bits &= ~B2DVars.BIT_RED;
+            bits |= B2DVars.BIT_GREEN;
+        } else if ((bits & B2DVars.BIT_GREEN) != 0) {
+            bits &= ~B2DVars.BIT_GREEN;
+            bits |= B2DVars.BIT_BLUE;
+        } else if ((bits & B2DVars.BIT_BLUE) != 0) {
+            bits &= ~B2DVars.BIT_BLUE;
+            bits |= B2DVars.BIT_RED;
+        }
+
+        // set new mask bits
+        filter.maskBits = bits;
+        player.getBody().getFixtureList().first().setFilterData(filter);
+
+        // set ne mask bits for foot
+        filter = player.getBody().getFixtureList().get(1).getFilterData();
+        bits &= ~B2DVars.BIT_CRYSTAL;
+        filter.maskBits = bits;
+        player.getBody().getFixtureList().get(1).setFilterData(filter);
+    }
 }

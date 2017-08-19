@@ -41,6 +41,7 @@ public class MyGdxGame extends ApplicationAdapter {
 		res = new Content();
 		res.loadTexture("images/bunny.png", "bunny");
 		res.loadTexture("images/crystal.png", "crystal");
+		res.loadTexture("images/hud.png", "hud");
 		sb = new SpriteBatch();
 		cam = new OrthographicCamera();
 		cam.setToOrtho(false, V_WIDTH, V_HEIGHT);
